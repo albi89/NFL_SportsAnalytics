@@ -10,6 +10,7 @@ output:
 
 ```{r warning = F, message = F}
 # install.packages('nflplotR')
+# install.packages('randomForest')
 # install.packages('ggrepel')
 # install.packages('ggimage')
 # install.packages('gt')
@@ -19,6 +20,7 @@ library(tidyverse)
 library(modelr)
 library(nflreadr)
 library(nflplotR)
+library(randomForest)
 library(ggrepel)
 library(ggimage)
 library(gt)
