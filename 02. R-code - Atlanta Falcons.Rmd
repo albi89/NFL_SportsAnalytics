@@ -10,7 +10,7 @@ output:
 
 ```{r warning = F, message = F}
 # install.packages('nflplotR')
-# install.packages('randomForest')
+install.packages('randomForest')
 # install.packages('ggrepel')
 # install.packages('ggimage')
 # install.packages('gt')
@@ -28,6 +28,12 @@ library(gtExtras)
 ```
 
 
+```{r}
+win_model = win_pct_model
+
+
+```
+
 
 # 2. Importing data:
 Let's use the load_pbp() function to load in play-by-play data from the last three seasons and filter for the regular seasons.
@@ -38,6 +44,7 @@ pbp <- load_pbp(seasons = 2019:2021)
 pbp <- pbp %>%
         filter(season_type == "REG")
 pbp
+
 ```
 
 
@@ -544,7 +551,7 @@ df_2021 %>%
 
 ```{r}
 df_2021 %>% 
-  mutate(selected_team = ifelse(team == "NYJ", 0.9, 0.3)) %>% 
+  mutate(selected_team = ifelse(team == "ATL", 0.9, 0.3)) %>% 
   ggplot(aes(x = epa_per_rush, y = epa_per_pass)) +
     geom_abline(slope = -1.5, intercept = seq(0.4, -0.3, -0.1), alpha = .2) +
     geom_mean_lines(aes(v_var = epa_per_rush, h_var = epa_per_pass)) +
@@ -559,100 +566,8 @@ df_2021 %>%
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```{r}
 metrics_atl = metrics %>% filter(team == 'ATL')
-
 metrics_not_atl = metrics %>% filter(team != 'ATL')
 
 df_predict_atl = df_predict %>% filter(team == 'ATL')
@@ -662,19 +577,6 @@ df_predict_not_atl = df_predict %>% filter(team != 'ATL')
 # get playoff data 
 playoff_data = load_pbp(seasons = 2019:2021) %>% filter(season_type == "POST")
 playoff_data
-
-
-```
-
-
-
-
-```{r}
-df_2021 <- df_2021 %>%
-            add_predictions(win_pct_model) %>%
-            rename(xWin_pct = pred) 
-
-df_2021
 ```
 
 
