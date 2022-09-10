@@ -10,7 +10,7 @@ output:
 
 ```{r warning = F, message = F}
 # install.packages('nflplotR')
-install.packages('randomForest')
+# install.packages('randomForest')
 # install.packages('ggrepel')
 # install.packages('ggimage')
 # install.packages('gt')
@@ -188,7 +188,7 @@ df
 
 
 # 6. Correlation Analysis to Identify Team KPIs:
-Identify measures of performance that correlate significantly with results. Ideally, the set of KPIs can span these various phases of the game, both offensive and defensive. We'll start with a pretty broad set, then try to use some of the correlation analysis results to pick a selective set. 
+Identify measures of performance that correlate significantly with results. Ideally, the set of KPIs can span these various phases of the game, both offensive and defensive.  
 
 ```{r}
 df %>%
@@ -206,9 +206,9 @@ df %>%
 Then we will use step-wise backward selection to remove variables that are not significant or are counter-intuitive. 
 
 ```{r}
-win_pct_model <- lm(data = df, Win_pct ~ y_per_rush + y_per_pass + epa_per_rush + epa_per_pass + st_epa_per_play +
-                    def_y_per_rush + def_y_per_pass + def_epa_per_rush + def_epa_per_pass + def_st_epa_per_play)
-summary(win_pct_model)
+WinPct_LR_Model <- lm(data = df, Win_pct ~ y_per_rush + y_per_pass + epa_per_rush + epa_per_pass + st_epa_per_play +
+                      def_y_per_rush + def_y_per_pass + def_epa_per_rush + def_epa_per_pass + def_st_epa_per_play)
+summary(WinPct_LR_Model)
 ```
 
 
@@ -222,8 +222,8 @@ Since the correlation for defensive special teams epa per play was counter-intui
 The good news here is that all the variables selected for the model were significant. The Adjusted R-square was also high at 0.804. Thus, we can say that 80.40% of the variation in win percentage can be explained by the regression model. 
 
 ```{r}
-win_pct_model <- lm(data = df, Win_pct ~ epa_per_pass + epa_per_rush + st_epa_per_play + def_epa_per_pass + def_epa_per_rush)
-summary(win_pct_model)
+WinPct_LR_Model <- lm(data = df, Win_pct ~ epa_per_pass + epa_per_rush + st_epa_per_play + def_epa_per_pass + def_epa_per_rush)
+summary(WinPct_LR_Model)
 ```
 
 
@@ -233,13 +233,43 @@ First, let's layer on the predicted and residual values from the model and store
 
 ```{r}
 df_predict <- df %>%
-                add_predictions(win_pct_model) %>%
-                add_residuals(win_pct_model) %>%
-                rename(x_Win_pct = pred, Residuals = resid)
+                add_predictions(WinPct_LR_Model) %>%
+                add_residuals(WinPct_LR_Model) %>%
+                rename(x_LR_WinPct = pred, LR_Resid = resid)
 
 df_predict
 ```
 
+
+
+# 9. Build a second model examine it's feature importance to determine most impactful KPIs and KPI cutoffs for Win Pct. 
+
+```{r}
+#make this example reproducible
+set.seed(32)
+
+#fit the random forest model
+WinPct_RF_Model <- randomForest(formula = Win_pct ~ y_per_rush + y_per_pass + epa_per_rush + epa_per_pass + st_epa_per_play +
+                                def_y_per_rush + def_y_per_pass + def_epa_per_rush + def_epa_per_pass + def_st_epa_per_play, 
+                                data = df)
+```
+
+
+
+We can see that this RandomForest model lists epa_per_pass and def_epa_per_pass as the two most important features. This is in line with the regression model's outputs where the two largest coefficients correspond to these same two variables.
+
+```{r}
+RF_Feature_Importance <- as.data.frame(importance(WinPct_RF_Model))
+RF_Feature_Importance %>% 
+  arrange(-IncNodePurity)
+```
+
+```{r}
+df_predict %>% 
+  add_predictions(WinPct_RF_Model) %>%
+  add_residuals(WinPct_RF_Model) %>% 
+  rename(x_RF_WinPct = pred, RF_Resid = resid)
+```
 
 
 # 9. Visualizing NFL Team Data
@@ -301,7 +331,7 @@ df_2021 %>%
   tab_style(style = list(
     cell_fill(color = "yellow")
     ),
-    locations = cells_body(rows = team == "ATL")) %>%
+    locations = cells_body(rows = team == "KC")) %>%
    tab_header(
     title = md("Team Rankings of EPA per Pass in the 2021 Season")
   )
@@ -369,7 +399,7 @@ Next, let's annotate the point of a particular team of interest. Let's assume we
 
 ```{r}
 df_2021 %>%
-  mutate(selected_team = ifelse(team == "ATL", 0.9, 0.3)) %>%
+  mutate(selected_team = ifelse(team == "KC", 0.9, 0.3)) %>%
   ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
     geom_point(aes(alpha = selected_team), show.legend = F) +
     geom_hline(aes(yintercept = mean(def_epa_per_pass)), color = "red", linetype = "dashed") +
@@ -466,7 +496,7 @@ Lastly, as opposed to splitting the scatterplot into four quadrants, it may be p
 
 ```{r}
 df_2021 <- df_2021 %>%
-            add_predictions(win_pct_model) %>%
+            add_predictions(win_model) %>%
             rename(xWin_pct = pred) 
 
 df_2021
