@@ -307,7 +307,7 @@ df_2021 %>%
   select(team_wordmark, team, wins, losses, ties, epa_per_pass) %>%
   mutate(rank = rank(-epa_per_pass, ties.method = "min")) %>%
   select(rank, everything()) %>%
-  arrange(rank) %>%
+  arrange(-rank) %>%
   gt::gt() %>%
   fmt_number(columns = "epa_per_pass", decimals = 3) %>%
   gt_img_rows(team_wordmark) %>%
@@ -558,6 +558,96 @@ df_2021 %>%
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 metrics_atl = metrics %>% filter(team == 'ATL')
 
@@ -598,4 +688,18 @@ df_2021 %>%
     xlab("EPA per Pass") + 
     ylab("Defensive EPA per Pass") +
     ggtitle("Defensive EPA per Pass vs. EPA per Pass for the 2021 NFL Season")
+```
+
+```{r warning = F, message = F}
+df_2021 %>%
+  select(team_wordmark, team, wins, losses, ties, epa_per_pass) %>%
+  mutate(rank = rank(-epa_per_pass, ties.method = "min")) %>%
+  select(rank, everything()) %>%
+  arrange(-rank) %>%
+  gt::gt() %>%
+  fmt_number(columns = "epa_per_pass", decimals = 3) %>%
+  gt_img_rows(team_wordmark) %>%
+  tab_style(style = list(cell_fill(color = "yellow")),
+  locations = gt::cells_body(rows = team == "KC")) %>%
+  tab_header(title = md("Team Rankings of EPA per Pass in the 2021 Season"))
 ```
