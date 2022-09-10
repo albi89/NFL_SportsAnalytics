@@ -457,7 +457,7 @@ Lastly, as opposed to splitting the scatterplot into four quadrants, it may be p
 
 ```{r}
 df_2021 <- df_2021 %>%
-            add_predictions(win_model) %>%
+            add_predictions(win_pct_model) %>%
             rename(xWin_pct = pred) 
 
 df_2021
@@ -555,4 +555,34 @@ df_2021 %>%
     theme(plot.title = ggplot2::element_text(face = "bold"),
           plot.title.position = "plot")
 ```
+
+
+
+```{r}
+metrics_atl = metrics %>% filter(team == 'ATL')
+
+metrics_not_atl = metrics %>% filter(team != 'ATL')
+
+df_predict_atl = df_predict %>% filter(team == 'ATL')
+
+df_predict_not_atl = df_predict %>% filter(team != 'ATL')
+
+# get playoff data 
+pbp <- 
+
+playoff_data = load_pbp(seasons = 2019:2021) %>% filter(season_type == "REG")
+playoff_data
+
+
+```
+
+
+```{r}
+df_2021 <- df_2021 %>%
+            add_predictions(win_pct_model) %>%
+            rename(xWin_pct = pred) 
+
+df_2021
+```
+
 
