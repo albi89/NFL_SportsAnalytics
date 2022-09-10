@@ -28,12 +28,6 @@ library(gtExtras)
 ```
 
 
-```{r}
-win_model = win_pct_model
-
-
-```
-
 
 # 2. Importing data:
 Let's use the load_pbp() function to load in play-by-play data from the last three seasons and filter for the regular seasons.
@@ -232,12 +226,12 @@ summary(WinPct_LR_Model)
 First, let's layer on the predicted and residual values from the model and store this as a new table called df_predict 
 
 ```{r}
-df_predict <- df %>%
-                add_predictions(WinPct_LR_Model) %>%
-                add_residuals(WinPct_LR_Model) %>%
-                rename(x_LR_WinPct = pred, LR_Resid = resid)
+df <- df %>%
+        add_predictions(WinPct_LR_Model) %>%
+        add_residuals(WinPct_LR_Model) %>%
+        rename(x_LR_WinPct = pred, LR_Resid = resid)
 
-df_predict
+df
 ```
 
 
@@ -265,10 +259,10 @@ RF_Feature_Importance %>%
 ```
 
 ```{r}
-df_predict %>% 
-  add_predictions(WinPct_RF_Model) %>%
-  add_residuals(WinPct_RF_Model) %>% 
-  rename(x_RF_WinPct = pred, RF_Resid = resid)
+df <- df %>% 
+        add_predictions(WinPct_RF_Model) %>%
+        add_residuals(WinPct_RF_Model) %>% 
+        rename(x_RF_WinPct = pred, RF_Resid = resid)
 ```
 
 
@@ -298,48 +292,7 @@ df_2021
 
 
 
-## Table Visuals
-
-We can use the gt package to help with table formatting. There are a lot of style variations that could be imposed. Given some nice features of nflreadr, we will use some specific stylistic touches. 
-
-First, here is how to build a simple table using the gt package. We will add in a rank column using the rank() formula since the table would be used in the purpose of showing how teams rank for a particular KPI. Let's do epa per pass. Let's also add a title. 
-```{r}
-df_2021 %>%
-  select(team, wins, losses, ties, epa_per_pass) %>%
-  mutate(rank = rank(-epa_per_pass, ties.method = "min")) %>%
-  select(rank, everything()) %>%
-  arrange(rank) %>%
-  gt() %>%
-  fmt_number(columns = "epa_per_pass", decimals = 3) %>%
-   tab_header(
-    title = md("Team Rankings of EPA per Pass in the 2021 Season")
-  )
-```
-
-
-
-Let's say we wanted to add color to a row in the effort to highlight a team. Assume we are focusing on KC. We would add the following:
-
-```{r}
-df_2021 %>%
-  select(team, wins, losses, ties, epa_per_pass) %>%
-  mutate(rank = rank(-epa_per_pass, ties.method = "min")) %>%
-  select(rank, everything()) %>%
-  arrange(rank) %>%
-  gt() %>%
-  fmt_number(columns = "epa_per_pass", decimals = 2) %>%
-  tab_style(style = list(
-    cell_fill(color = "yellow")
-    ),
-    locations = cells_body(rows = team == "KC")) %>%
-   tab_header(
-    title = md("Team Rankings of EPA per Pass in the 2021 Season")
-  )
-```
-
-
-
-A fancy feature of the nflreadr package is the inclusion of the team_wordmark image. We can actually insert that in the table as follows:
+Build a table and add in a rank column to show how teams rank for a particular KPI. Let's look at epa_per_pass.
 
 ```{r warning = F, message = F}
 df_2021 %>%
@@ -351,15 +304,13 @@ df_2021 %>%
   fmt_number(columns = "epa_per_pass", decimals = 3) %>%
   gt_img_rows(team_wordmark) %>%
   tab_style(style = list(cell_fill(color = "yellow")),
-  locations = gt::cells_body(rows = team == "KC")) %>%
+  locations = gt::cells_body(rows = team == "ATL")) %>%
   tab_header(title = md("Team Rankings of EPA per Pass in the 2021 Season"))
 ```
 
 
 
-*YOUR TURN*
-
-**A. Come up with a table similar to the one above that shows epa per rush and highlights the Philadelphia Eagles.** 
+Now let's look at epa_per_rush. 
 
 ```{r}
 df_2021 %>%
@@ -371,7 +322,7 @@ df_2021 %>%
   fmt_number(columns = "epa_per_rush", decimals = 3) %>%
   gt_img_rows(team_wordmark) %>%
   tab_style(style = list(cell_fill(color = "yellow")),
-  locations = gt::cells_body(rows = team == "PHI")) %>%
+  locations = gt::cells_body(rows = team == "ATL")) %>%
   tab_header(title = md("Team Rankings of EPA per Rush in the 2021 Season"))
 ```
 
@@ -379,102 +330,11 @@ df_2021 %>%
 
 ## Scatterplot visuals
 When doing team evaluation, scatterplots can be a good way to show team performance in relation to the rest of the league by looking at the interaction between two variables. This can also help to classify teams according to their strengths/weaknesses.
-First, let's just do a simple scatterplot of epa per pass vs. def epa per pass with points being labeled by teams. In addition, we'll take advantage of the ggrepel package to ensure that the labels don't overlap with one another. We'll also add red hash lines to indicate the mean levels for epa per pass and defensive epa per pass:
-
-```{r}
-df_2021 %>%
-  ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
-    geom_point() +
-    geom_hline(aes(yintercept = mean(def_epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = mean(epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_text_repel(aes(label = team)) +
-    xlab("EPA per Pass") + 
-    ylab("Defensive EPA per Pass") +
-    ggtitle("Defensive EPA per Pass vs. EPA per Pass for the 2021 NFL Season")
-```
-
-
-
-Next, let's annotate the point of a particular team of interest. Let's assume we are looking at the KC chiefs. We're going to create a variable called "selected_team". We will use the "alpha" factor to fade the other points, and embolden the KC point:
-
-```{r}
-df_2021 %>%
-  mutate(selected_team = ifelse(team == "KC", 0.9, 0.3)) %>%
-  ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
-    geom_point(aes(alpha = selected_team), show.legend = F) +
-    geom_hline(aes(yintercept = mean(def_epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = mean(epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_text_repel(aes(label = team, alpha = selected_team), show.legend = F) +
-    xlab("EPA per Pass") + 
-    ylab("Defensive EPA per Pass") +
-    ggtitle("Defensive EPA per Pass vs. EPA per Pass for the 2021 NFL Season")
-```
-
-
-
-There are two methods to produce a scatterplot that has the logos as the points. One method is more of a generic solution that you could try to adopt for other sports. The second method takes advantage of a specific R package that simplifies these plots for NFL teams. 
-
-Here is the method that takes advantage of the nflplotr package. In this first plot, we'll have all teams with the same image transparency:
-
-```{r}
-df_2021 %>% 
-  ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
-    geom_abline(slope = -1.5, intercept = seq(0.4, -0.3, -0.1), alpha = .2) +
-    geom_mean_lines(aes(v_var = epa_per_pass, h_var = def_epa_per_pass)) +
-  geom_nfl_logos(aes(team_abbr = team), width = 0.065, show.legend = F) +
-    labs(x = "Offense EPA/play",
-         y = "Defense EPA/play",
-         title = "2021 NFL Offensive and Defensive EPA per Play") +
-  theme_minimal() +
-  theme(plot.title = ggplot2::element_text(face = "bold"), 
-        plot.title.position = "plot")
-```
-
-
-
-Here is how we could take the plot above and fade all teams except the team of interest (KC):
-
-```{r}
-df_2021 %>% 
-  mutate(selected_team = ifelse(team == "KC", 0.9, 0.3)) %>% 
-  ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
-    geom_abline(slope = -1.5, intercept = seq(0.4, -0.3, -0.1), alpha = .2) +
-    geom_mean_lines(aes(v_var = epa_per_pass, h_var = def_epa_per_pass)) +
-  geom_nfl_logos(aes(team_abbr = team, alpha = selected_team), width = 0.065, show.legend = F) +
-  labs(x = "Offense EPA/play",
-       y = "Defense EPA/play",
-       title = "2021 NFL Offensive and Defensive EPA per Play") +
-  theme_minimal() +
-  theme(plot.title = ggplot2::element_text(face = "bold"), 
-        plot.title.position = "plot")
-```
-
-
-
-Next, this is a method that is more general purpose, given that you have a column of links to image locations. First, here is a plot of all points with the same transparency:
+Let's do a scatterplot of epa_per_pass vs. def_epa_per_pass with points being labeled by teams.
 
 ```{r}
  df_2021 %>%
-  ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
-    geom_abline(slope = -1.5, intercept = c(.4, .3, .2, .1, 0, -.1, -.2, -.3), alpha = .2) +
-    geom_hline(aes(yintercept = mean(def_epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = mean(epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_image(aes(image = team_logo_espn), size = 0.05, asp = 16 / 9) +
-    labs(x = "Offensive Pass EPA per play",
-         y = "Defensive EPA per play",
-         title = "2021 NFL Offensive and Defensive Pass EPA per Play") +
-  theme_bw() +
-  theme(aspect.ratio = 9 / 16,
-        plot.title = element_text(size = 12, hjust = 0.5, face = "bold"))
-```
-
-
-
-The transparency option is not there with the geom_image() function within the aesthetic. Therefore, using a highlighting method is another option in order to emphasize the team. Here is the code and output:
-
-```{r}
- df_2021 %>%
-  mutate(selected_team = ifelse(team == "KC", 1, 0)) %>%
+  mutate(selected_team = ifelse(team == "ATL", 1, 0)) %>%
   ggplot(aes(x = epa_per_pass, y = def_epa_per_pass)) +
     geom_point(aes(alpha = selected_team, color = selected_team), size = 12, show.legend = F) +
     geom_abline(slope = -1.5, intercept = c(.4, .3, .2, .1, 0, -.1, -.2, -.3), alpha = .2) +
@@ -492,117 +352,77 @@ The transparency option is not there with the geom_image() function within the a
 
 
 
-Lastly, as opposed to splitting the scatterplot into four quadrants, it may be preferable to simply look at fitted relationships and teams that may be above or below the fitted line. Let's first do a bit of wrangling to get the xWin% column back:
-
-```{r}
-df_2021 <- df_2021 %>%
-            add_predictions(win_model) %>%
-            rename(xWin_pct = pred) 
-
-df_2021
-```
-
-
-
-Now, let's produce a scatter plot with team logos using Win Percentage (y) and Expected Win Percentage (x). We'll also include a fitted line and highlight the team of interest. 
+Lastly, as opposed to splitting the scatterplot into four quadrants, it may be preferable to simply look at fitted relationships and teams that may be above or below the fitted line.  Let's produce a scatter plot with team logos using Win Percentage (y) and Expected Win Percentage (x). We'll also include a fitted line and highlight the team of interest. 
 
 ```{r}
  df_2021 %>%
-  mutate(selected_team = ifelse(team == "KC", 1, 0)) %>%
-  ggplot(aes(x = Win_pct, y = xWin_pct)) +
+  mutate(selected_team = ifelse(team == "ATL", 1, 0)) %>%
+  ggplot(aes(x = Win_pct, y = x_LR_WinPct)) +
     geom_point(aes(alpha = selected_team, color = selected_team), size = 12, show.legend = F) +
     geom_smooth(method = lm, se = F) +
     geom_image(aes(image = team_logo_espn), size = 0.05, asp = 16 / 9) +
-    labs(x = "Expected Win Percentage",
-         y = "Win Percentage",
-         title = "2021 NFL Offensive and Defensive Pass EPA per Play") +
+    labs(x = "Win Percentage",
+         y = "Expected Win Percentage (Linear Regression)",
+         title = "2021 NFL Expected Win Pct. vs Actual Win Pct. (Linear Regression)") +
   theme_bw() +
   theme(aspect.ratio = 9 / 16,
         plot.title = element_text(size = 12, hjust = 0.5, face = "bold")) +
   scale_colour_gradient(low = "white", high = "yellow")
 ```
 
+
+
+Let's look at the same visual above but from the perspective of the Random Forest model. It also confirms that the Atlanta Falcons are underperforming relative to expectation. 
+```{r}
+ df_2021 %>%
+  mutate(selected_team = ifelse(team == "ATL", 1, 0)) %>%
+  ggplot(aes(x = Win_pct, y = x_RF_WinPct)) +
+    geom_point(aes(alpha = selected_team, color = selected_team), size = 12, show.legend = F) +
+    geom_smooth(method = lm, se = F) +
+    geom_image(aes(image = team_logo_espn), size = 0.05, asp = 16 / 9) +
+    labs(x = "Win Percentage",
+         y = "Expected Win Percentage (Random Forest)",
+         title = "2021 NFL Expected Win Pct. vs Actual Win Pct. (Random Forest)") +
+  theme_bw() +
+  theme(aspect.ratio = 9 / 16,
+        plot.title = element_text(size = 12, hjust = 0.5, face = "bold")) +
+  scale_colour_gradient(low = "white", high = "yellow")
+```
 
 
 *YOUR TURN*
 
-**A. Produce a Scatterplot only showing teams (not logos), rush epa per play on the x axis, and pass epa per play on the y axis for the 2021 season**
+**A. Produce a Scatterplot only showing teams rush epa per play on the x axis, and pass epa per play on the y axis for the 2021 season**
 
-```{r}
-df_2021 %>%
-  ggplot(aes(x = epa_per_rush, y = epa_per_pass)) +
-  geom_point() +
-    geom_hline(aes(yintercept = mean(epa_per_pass)), color = "red", linetype = "dashed") +
-    geom_vline(aes(xintercept = mean(epa_per_rush)), color = "red", linetype = "dashed") +
-    geom_text_repel(aes(label = team)) +
-    xlab("EPA per Rush") + 
-    ylab("EPA per Pass") +
-    ggtitle("EPA per Pass vs. EPA per Rush for the 2021 NFL Season")
-```
-
-
-**B. Using the same variables above, produce a chart with with logos.**
 ```{r}
  df_2021 %>%
+  mutate(selected_team = ifelse(team == "ATL", 1, 0)) %>%
   ggplot(aes(x = epa_per_rush, y = epa_per_pass)) +
+    geom_point(aes(alpha = selected_team, color = selected_team), size = 12, show.legend = F) +
     geom_abline(slope = -1.5, intercept = c(.4, .3, .2, .1, 0, -.1, -.2, -.3), alpha = .2) +
     geom_hline(aes(yintercept = mean(epa_per_pass)), color = "red", linetype = "dashed") +
     geom_vline(aes(xintercept = mean(epa_per_rush)), color = "red", linetype = "dashed") +
     geom_image(aes(image = team_logo_espn), size = 0.05, asp = 16 / 9) +
-  labs(x = "Offensive Pass EPA per Rush",
-       y = "EPA per Pass",
-       title = "2021 EPA per Pass vs. EPA per Rush") +
-  theme_bw() +
-  theme(aspect.ratio = 9 / 16,
-        plot.title = element_text(size = 12, hjust = 0.5, face = "bold"))
-```
-
-
-
-**C. Produce the same chart in B, but emphasize the NY Jets.**
-
-```{r}
-df_2021 %>% 
-  mutate(selected_team = ifelse(team == "NYJ", 0.9, 0.3)) %>% 
-  ggplot(aes(x = epa_per_rush, y = epa_per_pass)) +
-    geom_abline(slope = -1.5, intercept = seq(0.4, -0.3, -0.1), alpha = .2) +
-    geom_mean_lines(aes(v_var = epa_per_rush, h_var = epa_per_pass)) +
-    geom_nfl_logos(aes(team_abbr = team, alpha = selected_team), width = 0.065, show.legend = F) +
-    labs(x = "EPA per Rush",
-         y = "EPA per Pass",
-         title = "2021 NFL EPA per Pass vs. EPA per Rush") +
-    theme_minimal() +
-    theme(plot.title = ggplot2::element_text(face = "bold"),
-          plot.title.position = "plot")
-```
-
-
-**D. Take the chart in C, and add a fitted line to the plot.** 
-
-```{r}
-df_2021 %>% 
-  mutate(selected_team = ifelse(team == "ATL", 0.9, 0.3)) %>% 
-  ggplot(aes(x = epa_per_rush, y = epa_per_pass)) +
-    geom_abline(slope = -1.5, intercept = seq(0.4, -0.3, -0.1), alpha = .2) +
-    geom_mean_lines(aes(v_var = epa_per_rush, h_var = epa_per_pass)) +
-    geom_nfl_logos(aes(team_abbr = team, alpha = selected_team), width = 0.065, show.legend = F) +
     geom_smooth(method = lm, se = F) +
     labs(x = "EPA per Rush",
          y = "EPA per Pass",
          title = "2021 NFL EPA per Pass vs. EPA per Rush") +
-    theme_minimal() +
-    theme(plot.title = ggplot2::element_text(face = "bold"),
-          plot.title.position = "plot")
+  theme_bw() +
+  theme(aspect.ratio = 9 / 16,
+        plot.title = element_text(size = 12, hjust = 0.5, face = "bold")) +
+  scale_colour_gradient(low = "white", high = "yellow")
 ```
+
+
 
 
 ```{r}
 metrics_atl = metrics %>% filter(team == 'ATL')
 metrics_not_atl = metrics %>% filter(team != 'ATL')
 
-df_predict_atl = df_predict %>% filter(team == 'ATL')
+df_predict_atl = df %>% filter(team == 'ATL')
 
-df_predict_not_atl = df_predict %>% filter(team != 'ATL')
+df_predict_not_atl = df %>% filter(team != 'ATL')
 
 # get playoff data 
 playoff_data = load_pbp(seasons = 2019:2021) %>% filter(season_type == "POST")
@@ -634,6 +454,6 @@ df_2021 %>%
   fmt_number(columns = "epa_per_pass", decimals = 3) %>%
   gt_img_rows(team_wordmark) %>%
   tab_style(style = list(cell_fill(color = "yellow")),
-  locations = gt::cells_body(rows = team == "KC")) %>%
+  locations = gt::cells_body(rows = team == "ATL")) %>%
   tab_header(title = md("Team Rankings of EPA per Pass in the 2021 Season"))
 ```
