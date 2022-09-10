@@ -236,13 +236,16 @@ df_predict
 
 
 # 9. Build a second model examine it's feature importance to determine most impactful KPIs and KPI cutoffs for Win Pct. 
+```{r}
+df
+```
 
 ```{r}
 #make this example reproducible
 set.seed(32)
 
 #fit the random forest model
-WinPct_RF_Model <- randomForest(data = df,
+WinPct_RF_Model <- randomForest(x=df,
                                 formula = Win_pct ~ y_per_rush + y_per_pass + epa_per_rush + epa_per_pass + st_epa_per_play +
                                 def_y_per_rush + def_y_per_pass + def_epa_per_rush + def_epa_per_pass + def_st_epa_per_play)
 ```
